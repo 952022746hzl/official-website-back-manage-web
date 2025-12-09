@@ -1,0 +1,1 @@
+export const ROOT_NODE_ID = 0; // 根节点ID
