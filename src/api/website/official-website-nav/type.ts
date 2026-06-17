@@ -20,6 +20,8 @@ export interface OfficialWebsiteNavForm {
   sort?: number;
   /** 备注 */
   remark?: string;
+  /** 显示状态（1-显示 0-隐藏） */
+  visible?: number;
 }
 
 
@@ -39,6 +41,8 @@ export interface OfficialWebsiteNavVO {
   remark?: string;
   /** 显示顺序 */
   sort?: number;
+  /** 显示状态（1-显示 0-隐藏） */
+  visible?: number;
   /** 创建人 ID */
   createBy?: number;
   /** 创建时间 */

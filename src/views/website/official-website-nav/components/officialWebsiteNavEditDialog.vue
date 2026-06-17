@@ -24,14 +24,18 @@
       <el-form-item label="导航类型" prop="type">
         <el-radio-group v-model="formData.type">
           <el-radio :value="1">外链</el-radio>
-          <el-radio :value="2">路由</el-radio>
+          <el-radio :value="2">内部路由</el-radio>
+          <el-radio :value="3">分组目录</el-radio>
         </el-radio-group>
       </el-form-item>
 
-      <el-form-item label="跳转地址" prop="linkTo">
-        <el-input 
-          v-model="formData.linkTo" 
-          :placeholder="formData.type === 1 ? '请输入完整的外链地址' : '请输入路由路径'" 
+      <el-form-item v-if="formData.type !== 3" label="跳转地址" prop="linkTo">
+        <el-input
+          v-model="formData.linkTo"
+          :placeholder="formData.type === 1
+            ? '请输入完整外链，如 https://example.com'
+            : '请输入内部路由，需以 / 开头，如 /solutions/about'"
+          @blur="handleLinkToBlur"
         />
       </el-form-item>
 
@@ -42,6 +46,10 @@
           controls-position="right"
           :min="0"
         />
+      </el-form-item>
+
+      <el-form-item label="显示状态" prop="visible">
+        <el-switch v-model="formData.visible" :active-value="1" :inactive-value="0" />
       </el-form-item>
 
       <el-form-item label="备注" prop="remark">
@@ -110,23 +118,70 @@ const navOptions = ref<OptionType[]>([]);
 const initialFormData: OfficialWebsiteNavForm = {
   id: undefined,
   parentId: 0,
-  type: 2, // 默认路由类型
+  type: 2, // 默认内部路由
   linkTo: "",
   title: "",
   sort: 1,
+  visible: 1,
   remark: "",
 };
 
 // 表单数据
 const formData = ref<OfficialWebsiteNavForm>({ ...initialFormData });
 
+// 跳转地址按类型校验
+const validateLinkTo = (_rule: any, value: string, callback: any) => {
+  if (formData.value.type === 3) {
+    callback();
+    return;
+  }
+  if (!value) {
+    callback(new Error("请输入跳转地址"));
+    return;
+  }
+  if (formData.value.type === 1 && !/^https?:\/\//.test(value)) {
+    callback(new Error("外链必须以 http:// 或 https:// 开头"));
+    return;
+  }
+  if (formData.value.type === 2 && !value.startsWith("/") && !value.startsWith("#")) {
+    callback(new Error("内部路由需以 / 开头，如 /solutions/about"));
+    return;
+  }
+  callback();
+};
+
 // 表单验证规则
 const rules = reactive({
   title: [{ required: true, message: "请输入导航标题", trigger: "blur" }],
   type: [{ required: true, message: "请选择导航类型", trigger: "change" }],
-  linkTo: [{ required: true, message: "请输入跳转地址", trigger: "blur" }],
+  linkTo: [{ validator: validateLinkTo, trigger: "blur" }],
   sort: [{ required: true, message: "请输入排序", trigger: "blur" }],
 });
+
+// 内部路由失焦自动补前导斜杠
+function handleLinkToBlur() {
+  const v = (formData.value.linkTo || "").trim();
+  if (
+    formData.value.type === 2 &&
+    v &&
+    !v.startsWith("/") &&
+    !v.startsWith("#") &&
+    !/^https?:\/\//.test(v)
+  ) {
+    formData.value.linkTo = "/" + v;
+  }
+}
+
+// 切到分组目录时清空跳转地址
+watch(
+  () => formData.value.type,
+  (t) => {
+    if (t === 3) {
+      formData.value.linkTo = "";
+      formRef.value?.clearValidate?.("linkTo");
+    }
+  }
+);
 
 // 获取导航下拉选项
 function getNavOptions() {
@@ -156,7 +211,7 @@ function handleSubmit() {
     if (isValid) {
       submitLoading.value = true;
       const navId = formData.value.id;
-      
+
       const submitPromise = navId
         ? OfficialWebsiteNavAPI.update(navId, formData.value)
         : OfficialWebsiteNavAPI.create(formData.value);

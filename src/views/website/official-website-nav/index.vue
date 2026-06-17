@@ -45,23 +45,30 @@
         @row-click="handleRowClick"
       >
         <el-table-column label="标题" min-width="200" prop="title" />
-        
+
         <el-table-column label="类型" align="center" width="100">
           <template #default="scope">
             <el-tag v-if="scope.row.type === 1" type="info">外链</el-tag>
-            <el-tag v-if="scope.row.type === 2" type="success">路由</el-tag>
+            <el-tag v-else-if="scope.row.type === 2" type="success">内部路由</el-tag>
+            <el-tag v-else-if="scope.row.type === 3" type="warning">分组目录</el-tag>
           </template>
         </el-table-column>
-        
+
         <el-table-column label="跳转地址" align="left" width="250" prop="linkTo" />
         <el-table-column label="排序" align="center" width="80" prop="sort" />
+        <el-table-column label="状态" align="center" width="80">
+          <template #default="scope">
+            <el-tag v-if="scope.row.visible === 1" type="success">显示</el-tag>
+            <el-tag v-else type="info">隐藏</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="备注" align="left" width="200" prop="remark" />
         <el-table-column label="创建时间" align="center" width="180">
           <template #default="scope">
             {{ scope.row.createTime ? useDateFormat(scope.row.createTime, "YYYY-MM-DD HH:mm:ss").value : "" }}
           </template>
         </el-table-column>
-        
+
         <el-table-column fixed="right" align="center" label="操作" width="220">
           <template #default="scope">
             <el-button
@@ -84,7 +91,7 @@
             >
               编辑
             </el-button>
-            
+
             <el-button
               type="danger"
               link
